@@ -2,7 +2,6 @@ from glob import glob
 import logging
 import os
 import json
-from random import sample
 from urllib.parse import unquote_plus
 import boto3
 from datetime import datetime, timedelta
@@ -16,6 +15,17 @@ if DEBUG:
 else:
     logger.setLevel(logging.INFO)
 
+s3 = boto3.client('s3')
+waiter = s3.get_waiter('object_exists')
+MANIFEST_CLUSTER_BUCKET = os.environ.get('MANIFEST_CLUSTER_BUCKET', False)
+BPM = 'InfiniumQCArray-24v1-0_A4.bpm'
+EGT = 'InfiniumQCArray-24v1-0_A3_ClusterFile.egt'
+# download manifest and cluster file if not already in /tmp
+if not os.path.exists(f'/tmp/{BPM}'):
+    s3.download_file(MANIFEST_CLUSTER_BUCKET, BPM, f'/tmp/{BPM}')
+if not os.path.exists(f'/tmp/{EGT}'):
+    s3.download_file(MANIFEST_CLUSTER_BUCKET, EGT, f'/tmp/{EGT}')
+
 def lambda_handler(event, _context):
     ''' Given S3 upload event, retrieve the image metadata and publish to SNS topic'''
     logger.debug(json.dumps(event))
@@ -25,23 +35,13 @@ def lambda_handler(event, _context):
     logger.info('idat prefix = %s', sample)
     event_time = datetime.fromisoformat(event['Records'][0]['eventTime'][:-1])
 
-    s3 = boto3.client('s3')
     s3.download_file(bucket, f'{sample}_Red.idat', f'/tmp/{sample}_Red.idat')
     # wait up to 5 seconds for Grn file, but make sure it's not an old version
-    waiter = s3.get_waiter('object_exists')
     waiter.wait(Bucket=bucket, Key=f'{sample}_Grn.idat', IfModifiedSince=event_time-timedelta(minutes=1), WaiterConfig={'MaxAttempts': 1})
     s3.download_file(bucket, f'{sample}_Grn.idat', f'/tmp/{sample}_Grn.idat')
     
-    # download manifest and cluster file, if not already in /tmp
-    bpm = 'InfiniumQCArray-24v1-0_A4.bpm'
-    egt = 'InfiniumQCArray-24v1-0_A3_ClusterFile.egt'
-    if not os.path.exists(f'/tmp/{bpm}'):
-        s3.download_file(bucket, bpm, f'/tmp/{bpm}')
-    if not os.path.exists(f'/tmp/{egt}'):
-        s3.download_file(bucket, egt, f'/tmp/{egt}')
-    
-    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{bpm}', f'/tmp/{egt}', '/tmp', '-f', '/tmp', '-g'])
-    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{bpm}', f'/tmp/{egt}', '/tmp', '-f', '/tmp', '-p'])
+    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{BPM}', f'/tmp/{EGT}', '/tmp', '-f', '/tmp', '-g'])
+    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{BPM}', f'/tmp/{EGT}', '/tmp', '-f', '/tmp', '-p'])
     
     s3.upload_file(f'/tmp/{sample}.gtc', bucket, f'{sample}.gtc')
     s3.upload_file(f'/tmp/{sample}.ped', bucket, f'{sample}.ped')

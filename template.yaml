@@ -31,6 +31,9 @@ Resources:
       MemorySize: 1536
       Architectures:
         - x86_64
+      Environment:
+        Variables:
+          MANIFEST_CLUSTER_BUCKET: !Ref DataBucket
       Layers:
       - !Ref IaapCli
       Policies:
