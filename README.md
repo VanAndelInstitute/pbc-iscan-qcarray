@@ -1,4 +1,4 @@
-# pbs-iscan-qcarray
+# pbc-iscan-qcarray
 The Pathology and Biorepository Core at the Van Andel Research Institute uses the Illumina Infinium QC Array BeadChip on the Illumina iScan to check biospecimens for contamination and mislabling. 
 This workflow has three main parts:
 1. gencall - Generate Genotype Call files (.gtc) from BeadArray Intensity Data files (.idat).
