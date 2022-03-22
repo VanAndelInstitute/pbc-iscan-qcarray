@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: pbs-iscan-qcarray
+Parameters:
+  DataBucket:
+    Type: String
+    Description: Name of the bucket containing *.idat and *.gtc files
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+  # MetadataBucket:
+  #   Type: String
+  #   Description: Name of the bucket containing iScan batch metadata
+  #   MinLength: 3
+  #   MaxLength: 63
+  #   AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+
+Resources:
+  IaapCli:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./iaap-cli
+
+  gencallFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: gencall/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Timeout: 15
+      MemorySize: 1536
+      Architectures:
+        - x86_64
+      Layers:
+      - !Ref IaapCli
+      Policies:
+      - S3ReadPolicy:
+          BucketName: !Ref DataBucket
+      - S3WritePolicy:
+          BucketName: !Ref DataBucket
+      # Events:
+      #   S3Event:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref DataBucket
+      #       Events: s3:ObjectCreated:*
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #           - Name: suffix
+      #             Value: _Red.idat
+
+  gencallFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${gencallFunction}'
+      RetentionInDays: 30
