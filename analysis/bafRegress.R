@@ -19,7 +19,7 @@ testsamplecontamination <- function(baf, abgeno, maf, subset=NULL, ...) {
 testsamples <- function(samples, maf, getgtc) {
     for (i in seq_along(samples$sample)) {    
         #dd <- do.call(getrawdata, c(list(file, sample=samples$sample[i]), options))
-        dd <- getgtc(samples$sample[i]$sample_id)
+        dd <- getgtc(samples$sample[i])
         reg <- testsamplecontamination(dd$BAF, dd$ABGENO, maf)
         if (i==1) {
             allcoef <- matrix(0, ncol=length(reg), nrow=length(samples$sample))
