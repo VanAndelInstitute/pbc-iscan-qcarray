@@ -50,8 +50,8 @@ def lambda_handler(event, _context):
     waiter.wait(Bucket=bucket, Key=f'{sample}_Grn.idat', IfModifiedSince=event_time-timedelta(minutes=1), WaiterConfig={'MaxAttempts': 1})
     s3.download_file(bucket, f'{sample}_Grn.idat', f'/tmp/{sample}_Grn.idat')
     
-    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{BPM}', f'/tmp/{EGT}', '/tmp', '-f', '/tmp', '-g'])
-    subprocess.run(['/opt/iaap-cli/iaap-cli', 'gencall', f'/tmp/{BPM}', f'/tmp/{EGT}', '/tmp', '-f', '/tmp', '-p'])
+    cmd = f'/opt/iaap-cli/iaap-cli gencall /tmp/{BPM} /tmp/{EGT} /tmp -f /tmp -g'
+    subprocess.run(cmd)
     
     s3.upload_file(f'/tmp/{sample}.gtc', bucket, f'{sample}.gtc')
     s3.upload_file(f'/tmp/{sample}.ped', bucket, f'{sample}.ped')
