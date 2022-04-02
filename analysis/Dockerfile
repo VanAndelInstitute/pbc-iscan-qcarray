@@ -84,7 +84,7 @@ RUN cd /tmp && \
 
 # R packages and Python packages that are usable via "reticulate".
 RUN conda install --quiet --yes \
-    'r-base=4.0.0' \
+    'r-base=4.0.5' \
     'r-caret=6.*' \
     'r-crayon=1.3*' \
     'r-devtools=2.3*' \
@@ -101,6 +101,7 @@ RUN conda install --quiet --yes \
     'unixodbc=2.3.*' \
     'r-tidymodels=0.1*' \
     'r-reticulate=1.*' \
+    'r-paws=0.1*' \
     && \
     pip install --quiet --no-cache-dir \
     'boto3>1.0<2.0' \
