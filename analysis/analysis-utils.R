@@ -60,13 +60,10 @@ filename <- "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
 s3$download_file(bucket, filename, paste0("/tmp/", filename))
 filename <- "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
 s3$download_file(bucket, filename, paste0("/tmp/", filename))
-filename <- "InfiniumQCArray-24v1-0_A4.bpm"
-bpm <- paste0("/tmp/", filename)
-s3$download_file(bucket, filename, bpm)
 
 source("argyle-io.R")
 
-import.gencalls <- function(sample.info) {
+import.gencalls <- function(sample.info, manifest) {
 
   # Construct marker map
   phys_loc = read.delim("/tmp/InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt", header = TRUE, sep= '\t')
@@ -84,9 +81,8 @@ import.gencalls <- function(sample.info) {
   #Merge them by marker (SNP_Name)
   marker_map <- merge(phys_loc, allele_map, by = "marker") %>% dplyr::select(chr,marker,cM,pos,A1,A2) %>% mutate_all(as.character)
   row.names(marker_map) <- marker_map$marker
-
   # Downloads and import .gtc data
-  return(read.beadarrayfiles(sample.info, snps = marker_map, bpm))
+  return(read.beadarrayfiles(sample.info, snps = marker_map, manifest = manifest))
 }
 
 

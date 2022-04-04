@@ -35,7 +35,7 @@ library(reticulate)
 #'  Inspiration from Dan Gatti's DOQTL package: <https://github.com/dmgatti/DOQTL/blob/master/R/extract.raw.data.R>
 #'
 #' @export
-read.beadarrayfiles <- function(sample.info, snps, bpm, ...) {
+read.beadarrayfiles <- function(sample.info, snps, manifest, ...) {
 
     ## stop here if marker map is not well-formed
     if (!.is.valid.map(snps)) {
@@ -46,7 +46,7 @@ read.beadarrayfiles <- function(sample.info, snps, bpm, ...) {
     }
     
     ## read files from Illumina .gtc BeadArray files
-    data <- .read.illumina.raw(sample.info, snps = length(snps), bpm = bpm)
+    data <- .read.illumina.raw(sample.info, nsnps = nrow(snps), manifest = manifest)
     rownames(data$samples) <- gsub(" ","", rownames(data$samples))
     
     ## convert to matrices using data.table's optimized code
@@ -86,37 +86,16 @@ read.beadarrayfiles <- function(sample.info, snps, bpm, ...) {
 
 s3 <- paws::s3()
 ## process .gtc files into a dataframe (of samples) and data.table (of calls/intensities)
-.read.illumina.raw <- function(sample.info, nsnps, bpm, ...) {
+.read.illumina.raw <- function(sample.info, nsnps, manifest, ...) {
     
     #data <- data.table::fread(piper, skip = 9, showProgress = interactive(), stringsAsFactors = FALSE, sep = "\t")
-    bead.array.files <- import('IlluminaBeadArrayFiles')
-    manifest <- bead.array.files$BeadPoolManifest(bpm)
-    data <- data.table::data.table(marker = character(), iid = character(), x = numeric(), y = numeric(),
-                                   call1 = character(), call2 = character())
-    gender <- array(numeric(), c(nrow(sample.info)))
-    U <- 0
-    M <- 1
-    F <- 2
-    
-    for (i in seq_along(sample.info$Sample_ID)) {
-        # Download the genotype data
-        key <- glue::glue('{sample.info$Barcode[i]}_{sample.info$Position[i]}.gtc')
-        filename <- paste0("/tmp/", key)
-        s3$download_file(bucket, key, filename)
-        
-        # Read in the genotype data from binary file
-        gtc <- bead.array.files$GenotypeCalls(filename)
-        gender[i] <- get(as.character(gtc$get_gender()))
-        calls <- gtc$get_base_calls_forward_strand(manifest$snps, manifest$source_strands)
-        intensities <- unlist(gtc$get_normalized_intensities(manifest$normalization_lookups))
-        sample.data <- data.table::data.table(
-            marker = manifest$names, iid = sample.info$Sample_ID[i],
-            x = intensities[1], y = intensities[2], 
-            call1 = calls[1], call2 = calls[2])
-        data <- rbind(data, sample.data)
-    }
+    bead.array.files <- import('IlluminaBeadArrayFiles')    
+    intensity.data <- map(sample.info, ~ get.intensity.data(.,manifest))
+    data <- rbindlist(intensity.data)
+    gender <- unlist(map(intensity.data, ~ attr(.,"gender")))
+    print(gender)
     gender[gender==3] <- 0
-    samples.df <- data.frame(Name = sample.info$Sample_ID, Gender = gender)
+    samples.df <- data.frame(Name = names(sample.info), Gender = gender)
 
     ## rename samples by index
 	renamer <- make.unique(as.character(samples.df$Name))
@@ -137,6 +116,32 @@ s3 <- paws::s3()
     
     return( list(samples = samples.df, intens = data) )
     
+}
+
+get.intensity.data <- function(sample, manifest) {
+    U <- 0
+    M <- 1
+    F <- 2
+    
+    # Download the genotype data
+    key <- glue::glue('{sample$Barcode}_{sample$Position}.gtc')
+    filename <- paste0("/tmp/", key)
+    if(!file.exists(filename)) {
+        s3$download_file(bucket, key, filename)
+    }
+    # Read in the genotype data from binary file
+    gtc <- bead.array.files$GenotypeCalls(filename)
+    gender <- get(as.character(gtc$get_gender()))
+    print(gender)
+    calls <- gtc$get_base_calls_forward_strand(manifest$snps, manifest$source_strands)
+    intensities <- unlist(gtc$get_normalized_intensities(manifest$normalization_lookups))
+    sample.data <- data.table::data.table(
+        marker = manifest$names,
+        iid = sample$Sample_ID,
+        x = intensities[1], y = intensities[2], 
+        call1 = calls[1], call2 = calls[2])
+    setattr(sample.data, "gender", gender)
+    return(sample.data)
 }
 
 ## convert data.table of calls/intensities to a (sites x samples) matrix
