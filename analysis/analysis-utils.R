@@ -1,6 +1,5 @@
 library(plyr)
-library(dplyr)
-library(argyle)
+library(dplyr, warn.conflicts = FALSE)
 
 
 merge.sheets <- function(manifest, sample_sheets){
@@ -55,13 +54,21 @@ merge.sheets <- function(manifest, sample_sheets){
   return(merged)
 }
 
-import.idat <- function(final_report_prefix){
-  # to be run within the parent directory for the project.
-  # automatically finds and imports GS final report. will fail if multiple Final_Reports in dir.
-  
-  #Construct marker mapcd 
-  phys_loc = read.delim("/secondary/projects/bbc/tools/cptac_tools/InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt", header = TRUE, sep= '\t')
-  allele_map = as.data.frame(read.delim("/secondary/projects/bbc/tools/cptac_tools/InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt", header = FALSE,sep="\t", stringsAsFactors = F))
+s3 <- paws::s3()
+bucket <- "pbc-iscan-qcarrays"
+filename <- "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
+s3$download_file(bucket, filename, paste0("/tmp/", filename))
+filename <- "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
+s3$download_file(bucket, filename, paste0("/tmp/", filename))
+
+source("argyle-io.R")
+
+import.gencalls <- function(sample.info, manifest) {
+
+  # Construct marker map
+  phys_loc = read.delim("/tmp/InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt", header = TRUE, sep= '\t')
+  allele_map = as.data.frame(read.delim("/tmp/InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt", header = FALSE,sep="\t", stringsAsFactors = F))
+
     #remove header
     allele_map = allele_map[-c(1:5), ]
     colnames(allele_map) = allele_map[1,]
@@ -74,10 +81,10 @@ import.idat <- function(final_report_prefix){
   #Merge them by marker (SNP_Name)
   marker_map <- merge(phys_loc, allele_map, by = "marker") %>% dplyr::select(chr,marker,cM,pos,A1,A2) %>% mutate_all(as.character)
   row.names(marker_map) <- marker_map$marker
-
-  
-  return(read.beadstudio(prefix = final_report_prefix, snps = marker_map))
+  # Downloads and import .gtc data
+  return(read.beadarrayfiles(sample.info, snps = marker_map, manifest = manifest))
 }
+
 
 myplot.QC.result <- function (qc, show = c("point", "label"), theme.fn = ggplot2::theme_bw, ...){
   calls <- qc$calls
