@@ -52,6 +52,31 @@ Resources:
       #           Rules:
       #           - Name: suffix
       #             Value: _Red.idat
+  
+  xlsx2csvFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: xlsx2csv/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+      - S3ReadPolicy:
+          BucketName: !Ref DataBucket
+      - S3WritePolicy:
+          BucketName: !Ref DataBucket
+      # Events:
+      #   S3Event:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref DataBucket
+      #       Events: s3:ObjectCreated:*
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #           - Name: suffix
+      #             Value: .xlsx
 
   gencallFunctionLogGroup:
     Type: AWS::Logs::LogGroup
