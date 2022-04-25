@@ -2,18 +2,24 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: pbs-iscan-qcarray
 Parameters:
-  DataBucket:
+  SampleDataBucket:
     Type: String
     Description: Name of the bucket containing *.idat and *.gtc files
     MinLength: 3
     MaxLength: 63
     AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
-  # MetadataBucket:
-  #   Type: String
-  #   Description: Name of the bucket containing iScan batch metadata
-  #   MinLength: 3
-  #   MaxLength: 63
-  #   AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+  BatchFilesBucket:
+    Type: String
+    Description: Name of the bucket containing the .xlsx and .csv batch metadata files
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+  SampleInfoBucket:
+    Type: String
+    Description: Name of the bucket containing the .parquet files
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
 
 Resources:
   IaapCli:
@@ -33,19 +39,19 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          MANIFEST_CLUSTER_BUCKET: !Ref DataBucket
+          MANIFEST_CLUSTER_BUCKET: !Ref SampleDataBucket
       Layers:
       - !Ref IaapCli
       Policies:
       - S3ReadPolicy:
-          BucketName: !Ref DataBucket
+          BucketName: !Ref SampleDataBucket
       - S3WritePolicy:
-          BucketName: !Ref DataBucket
+          BucketName: !Ref SampleDataBucket
       # Events:
       #   S3Event:
       #     Type: S3
       #     Properties:
-      #       Bucket: !Ref DataBucket
+      #       Bucket: !Ref SampleDataBucket
       #       Events: s3:ObjectCreated:*
       #       Filter:
       #         S3Key:
@@ -63,14 +69,41 @@ Resources:
         - x86_64
       Policies:
       - S3ReadPolicy:
-          BucketName: !Ref DataBucket
+          BucketName: !Ref BatchFilesBucket
       - S3WritePolicy:
-          BucketName: !Ref DataBucket
+          BucketName: !Ref BatchFilesBucket
       # Events:
       #   S3Event:
       #     Type: S3
       #     Properties:
-      #       Bucket: !Ref DataBucket
+      #       Bucket: !Ref BatchFilesBucket
+      #       Events: s3:ObjectCreated:*
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #           - Name: suffix
+      #             Value: .xlsx
+
+  parquetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: parquet/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Timeout: 15
+      MemorySize: 1536
+      Architectures:
+        - x86_64
+      Policies:
+      - S3ReadPolicy:
+          BucketName: !Ref BatchFilesBucket
+      - S3WritePolicy:
+          BucketName: !Ref SampleInfoBucket
+      # Events:
+      #   S3Event:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref BatchFilesBucket
       #       Events: s3:ObjectCreated:*
       #       Filter:
       #         S3Key:
