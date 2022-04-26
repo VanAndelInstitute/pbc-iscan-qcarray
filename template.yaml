@@ -21,11 +21,26 @@ Parameters:
     MaxLength: 63
     AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
 
+Globals:
+  Function:
+    Environment:
+      Variables:
+        DEBUG: 'False'
+
 Resources:
   IaapCli:
     Type: AWS::Serverless::LayerVersion
     Properties:
       ContentUri: ./iaap-cli
+
+  PandasPyarrow:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./pandas-pyarrow
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: makefile
 
   gencallFunction:
     Type: AWS::Serverless::Function
@@ -58,42 +73,22 @@ Resources:
       #           Rules:
       #           - Name: suffix
       #             Value: _Red.idat
-  
-  xlsx2csvFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: xlsx2csv/
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Policies:
-      - S3ReadPolicy:
-          BucketName: !Ref BatchFilesBucket
-      - S3WritePolicy:
-          BucketName: !Ref BatchFilesBucket
-      # Events:
-      #   S3Event:
-      #     Type: S3
-      #     Properties:
-      #       Bucket: !Ref BatchFilesBucket
-      #       Events: s3:ObjectCreated:*
-      #       Filter:
-      #         S3Key:
-      #           Rules:
-      #           - Name: suffix
-      #             Value: .xlsx
 
-  parquetFunction:
+  sampleinfoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: parquet/
+      CodeUri: sample-info/
       Handler: app.lambda_handler
       Runtime: python3.9
-      Timeout: 15
+      Timeout: 30
       MemorySize: 1536
       Architectures:
         - x86_64
+      Environment:
+        Variables:
+          SAMPLE_INFO_BUCKET: !Ref SampleInfoBucket
+      Layers:
+      - !Ref PandasPyarrow
       Policies:
       - S3ReadPolicy:
           BucketName: !Ref BatchFilesBucket
@@ -105,14 +100,15 @@ Resources:
       #     Properties:
       #       Bucket: !Ref BatchFilesBucket
       #       Events: s3:ObjectCreated:*
-      #       Filter:
-      #         S3Key:
-      #           Rules:
-      #           - Name: suffix
-      #             Value: .xlsx
 
   gencallFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${gencallFunction}'
+      RetentionInDays: 30
+  
+  sampleinfoFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${sampleinfoFunction}'
       RetentionInDays: 30

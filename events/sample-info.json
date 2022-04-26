@@ -27,7 +27,7 @@
             "arn": "arn:aws:s3:::pbc-qcarray-batch-files"
           },
           "object": {
-            "key": "iScan manifest_with subject IDs_211118.xlsx",
+            "key": "211118/iScan manifest_with subject IDs_211118.xlsx",
             "size": 26003,
             "eTag": "0123456789abcdef0123456789abcdef",
             "sequencer": "0A1B2C3D4E5F678901"
