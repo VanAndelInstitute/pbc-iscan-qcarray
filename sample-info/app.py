@@ -30,7 +30,7 @@ def lambda_handler(event, _context):
 
     # get actual file names
     response = s3.list_objects_v2(Bucket=bucket, Prefix=folder)
-    ss_name = manifest_name = exp_pairs_name = None
+    ss_key = manifest_key = exp_pairs_key = None
     for obj in response['Contents']:
         logger.debug(obj['Key'])
         if re.search('SampleSheet', obj['Key']):
