@@ -8,7 +8,7 @@ This workflow has three main parts:
 - [bafRegress](https://genome.sph.umich.edu/wiki/BAFRegress) - Contamination testing
 - analysis - Perform the remaining QC analysis steps to determine sample mislabling
 
-This first two parts of the workflow are implemented as AWS Serverless, event-driven processes. The last part of the workflow (QC) is implemented as a Jupyter notebook in R.
+This first two parts of the workflow are implemented as AWS Serverless, event-driven processes. The last part of the workflow (QC) is implemented as a Jupyter notebook in R. See the [README](analysis/README.md) for that part.
 
  ![](workflow.png)
 
