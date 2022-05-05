@@ -55,7 +55,8 @@ def lambda_handler(event, _context):
 
     sample_sheet = pd.read_csv(ss_file, skiprows=10,
                     names=['Sample_ID','Barcode','Position'],
-                    usecols=['Sample_ID','Barcode','Position'])
+                    usecols=['Sample_ID','Barcode','Position'],
+                    dtype={'Barcode': str})
     convert_pairing = lambda x: "tumor-normal" if "2" in str(x) else "tumor-normal-nat" if "3" in str(x) else None
     manifest = pd.read_excel(manifest_file,
                         usecols=['BSI_ID', 'Subject_ID', 'Anatomic_Site', 'Sample_Type','Within_batch_pairing'],
