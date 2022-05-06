@@ -69,5 +69,5 @@ def lambda_handler(event, _context):
     subset = merged[merged.Sample_ID != "EMTPY"]
 
     batch_name = pd.read_csv(ss_file, skiprows=[0,1], header=None, nrows=1, usecols=[1])[1][0]
-    table = pa.Table.from_pandas(subset)
+    table = pa.Table.from_pandas(subset, preserve_index=False)
     pq.write_table(table, f's3://{SAMPLE_INFO_BUCKET}/{batch_name}/sample_info.parquet')
