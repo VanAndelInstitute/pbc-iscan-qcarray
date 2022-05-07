@@ -76,6 +76,7 @@ RUN cd /tmp && \
     conda config --system --prepend channels conda-forge && \
     conda config --system --set auto_update_conda false && \
     conda config --system --set show_channel_urls true && \
+    conda config --system --set channel_priority strict && \
     conda install --quiet --yes conda="${CONDA_VERSION%.*}.*" && \
     conda update --all --quiet --yes && \
     conda clean --all -f -y && \
@@ -102,11 +103,23 @@ RUN conda install --quiet --yes \
     'r-tidymodels=0.1*' \
     'r-reticulate=1.*' \
     'r-paws=0.1*' \
+    'r-arrow=7.0*' \
     && \
-    pip install --quiet --no-cache-dir \
-    'boto3>1.0<2.0' \
-    'sagemaker>2.0<3.0' && \
     conda clean --all -f -y
+    
+RUN pip install --no-cache-dir \
+    'boto3>1.0<2.0' \
+    'sagemaker>2.0<3.0' \
+    'sagemaker-studio-image-build'
+
+# for argyle
+RUN conda install --quiet --yes \
+    'liblapack' \
+    'libblas' \
+    'r-biocmanager' \
+    'r-r.utils' \
+    && Rscript -e 'BiocManager::install("preprocessCore")' \
+    && Rscript -e 'devtools::install_github("andrewparkermorgan/argyle")'
 
 WORKDIR $HOME
 USER $NB_UID
