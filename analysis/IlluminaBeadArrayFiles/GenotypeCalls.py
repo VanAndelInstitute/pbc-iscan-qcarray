@@ -2,6 +2,7 @@ import struct
 from numpy import cos, sin, pi, arctan2, float32, uint16, int32, seterr, frombuffer, dtype
 from .BeadArrayUtility import read_int, read_string, read_byte, read_float, read_char, read_ushort, complement
 from .BeadPoolManifest import RefStrand, SourceStrand
+import fsspec
 
 seterr(divide='ignore', invalid='ignore')
 nan = float32('nan')
@@ -114,7 +115,7 @@ class GenotypeCalls(object):
             GenotypeCalls
         """
         self.filename = filename
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             identifier = gtc_handle.read(3)
             identifier = identifier.decode("utf-8")
             if identifier != "gtc":
@@ -149,7 +150,7 @@ class GenotypeCalls(object):
             A single value parsed from the file (type dependent on
             parse_function)
         """
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[toc_entry])
             return parse_function(gtc_handle)
 
@@ -169,7 +170,7 @@ class GenotypeCalls(object):
         Returns:
             list(type): An array parsed from the file (type dependent on parse_function)
         """
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[toc_entry])
             num_entries = read_int(gtc_handle) - offset
             if count is not None:
@@ -197,7 +198,7 @@ class GenotypeCalls(object):
             list(type): An array parsed from the file (type dependent on parse_function)
         """
         numpy_type = dtype(numpy_type)
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[toc_entry])
             num_entries = read_int(gtc_handle) - offset
             if count is not None:
@@ -390,7 +391,7 @@ class GenotypeCalls(object):
         if ploidy_type != 1:
             genotypes = self.get_genotypes()
 
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_BASE_CALLS])
             num_entries = read_int(gtc_handle)
             result = []
@@ -491,7 +492,7 @@ class GenotypeCalls(object):
         Returns:
             int: The number of calls
         """
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_GC50] + 4)
             return read_int(gtc_handle)
 
@@ -500,7 +501,7 @@ class GenotypeCalls(object):
         Returns:
             int: The number of no calls
         """
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_GC50] + 8)
             return read_int(gtc_handle)
 
@@ -509,7 +510,7 @@ class GenotypeCalls(object):
         Returns:
             int: The number of intensity only SNPs
         """
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_GC50] + 12)
             return read_int(gtc_handle)
 
@@ -543,7 +544,7 @@ class GenotypeCalls(object):
             raise Exception(
                 "Percentile intensities unavailable in GTC File version (" + str(self.version) + ")")
         result = []
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_PERCENTILES_X])
             result = []
             for idx in range(3):
@@ -560,7 +561,7 @@ class GenotypeCalls(object):
             raise Exception(
                 "Percentile intensities unavailable in GTC File version (" + str(self.version) + ")")
         result = []
-        with open(self.filename, "rb") as gtc_handle:
+        with fsspec.open(self.filename, "rb") as gtc_handle:
             gtc_handle.seek(self.toc_table[GenotypeCalls.__ID_PERCENTILES_Y])
             result = []
             for idx in range(3):

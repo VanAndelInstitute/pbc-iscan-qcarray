@@ -107,8 +107,10 @@ RUN conda install --quiet --yes \
     && \
     conda clean --all -f -y
     
-RUN pip install --no-cache-dir \
+RUN pip install --quiet --no-cache-dir \
     'boto3>1.0<2.0' \
+    'fsspec>2022.0' \
+    's3fs>2022.0' \
     'sagemaker>2.0<3.0' \
     'sagemaker-studio-image-build'
 

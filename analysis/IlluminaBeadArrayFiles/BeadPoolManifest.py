@@ -1,4 +1,5 @@
 from .BeadArrayUtility import read_int, read_string, read_byte
+import fsspec
 
 class BeadPoolManifest(object):
     """
@@ -58,7 +59,7 @@ class BeadPoolManifest(object):
             Exception: Unsupported or unknown BPM version
             Exception: Manifest format error
         """
-        with open(manifest_file, "rb") as manifest_handle:
+        with fsspec.open(manifest_file, "rb") as manifest_handle:
             header = manifest_handle.read(3)
             header = header.decode("utf-8")
             if len(header) != 3 or header != "BPM":
