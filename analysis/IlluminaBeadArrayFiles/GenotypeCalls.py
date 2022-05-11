@@ -1,5 +1,5 @@
 import struct
-from numpy import cos, sin, pi, arctan2, float32, uint16, int32, seterr, frombuffer, dtype
+from numpy import cos, sin, pi, arctan2, float32, uint16, int32, ubyte, seterr, frombuffer, dtype
 from .BeadArrayUtility import read_int, read_string, read_byte, read_float, read_char, read_ushort, complement
 from .BeadPoolManifest import RefStrand, SourceStrand
 import fsspec
@@ -303,7 +303,7 @@ class GenotypeCalls(object):
         Returns:
             string: A byte list (string) of genotypes. See code2genotype for mapping
         """
-        return self.__get_generic_array(GenotypeCalls.__ID_GENOTYPES, read_byte, 1, offset, count)
+        return self.__get_generic_array_numpy(GenotypeCalls.__ID_GENOTYPES, ubyte, offset, count)
 
     def get_base_calls_generic(self, snps, strand_annotations, report_strand, unknown_annotation):
         """
