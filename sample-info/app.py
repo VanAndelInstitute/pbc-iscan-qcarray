@@ -65,7 +65,8 @@ def lambda_handler(event, _context):
     exp_pairs = pd.read_excel(exp_pairs_file,
                         usecols=['BSI_ID_Current', 'BSI_ID_Previous'])
     exp_pairs.rename(columns={'BSI_ID_Current': 'Sample_ID'}, inplace=True)
-    merged = manifest.merge(sample_sheet, how='left', on='Sample_ID').merge(exp_pairs, how='left', on='Sample_ID')
+    exp_pairs_list = exp_pairs.groupby('Sample_ID').agg(list)
+    merged = manifest.merge(sample_sheet, how='left', on='Sample_ID').merge(exp_pairs_list, how='left', on='Sample_ID')
     subset = merged[merged.Sample_ID != "EMTPY"]
 
     batch_name = pd.read_csv(ss_file, skiprows=[0,1], header=None, nrows=1, usecols=[1])[1][0]
