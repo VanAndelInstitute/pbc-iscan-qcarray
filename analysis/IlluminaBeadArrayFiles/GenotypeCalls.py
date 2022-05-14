@@ -178,10 +178,8 @@ class GenotypeCalls(object):
             if offset > 0:
                 gtc_handle.seek(
                     self.toc_table[toc_entry] + 4 + offset * item_size)
-            result = []
-            for idx in range(num_entries):
-                result.append(parse_function(gtc_handle))
-            return result
+            buffer = gtc_handle.read(num_entries * item_size)
+            return [parse_function(buffer[idx:idx+item_size]) for idx in range(0, num_entries * item_size, item_size)]
 
     def __get_generic_array_numpy(self, toc_entry, numpy_type, offset=0, count=None):
         """
@@ -587,7 +585,7 @@ class GenotypeCalls(object):
         Returns:
             List(NormalizationTransform): The normalization transforms used during genotyping 
         """
-        return self.__get_generic_array(GenotypeCalls.__ID_NORMALIZATION_TRANSFORMS, NormalizationTransform.read_normalization_transform, 52, 0, None)
+        return self.__get_generic_array(GenotypeCalls.__ID_NORMALIZATION_TRANSFORMS, lambda buffer: NormalizationTransform(buffer), 52, 0, None)
 
     def is_write_complete(self):
         """
