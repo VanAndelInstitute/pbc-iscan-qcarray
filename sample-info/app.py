@@ -3,11 +3,8 @@ import logging
 import os
 import json
 from urllib.parse import unquote_plus
-import boto3
+import awswrangler as wr
 import re
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,10 +14,8 @@ if DEBUG:
 else:
     logger.setLevel(logging.INFO)
 
-s3 = boto3.client('s3')
-
-
 SAMPLE_INFO_BUCKET = os.environ.get('SAMPLE_INFO_BUCKET')
+
 def lambda_handler(event, _context):
     ''' Given S3 upload event, retrieve the image metadata and publish to SNS topic'''
     logger.debug(json.dumps(event))
@@ -29,46 +24,41 @@ def lambda_handler(event, _context):
     folder = os.path.dirname(key)
 
     # get actual file names
-    response = s3.list_objects_v2(Bucket=bucket, Prefix=folder)
-    ss_key = manifest_key = exp_pairs_key = None
-    for obj in response['Contents']:
-        logger.debug(obj['Key'])
-        if re.search('SampleSheet', obj['Key']):
-            ss_key = obj['Key']
-        elif re.search('manifest', obj['Key'], re.IGNORECASE):
-            manifest_key = obj['Key']
-        elif re.search('expected', obj['Key'], re.IGNORECASE):
-            exp_pairs_key = obj['Key']
+    paths = wr.s3.list_objects(f's3://{bucket}/{folder}/')
+    ss_path = manifest_path = exp_pairs_path = None
+    for path in paths:
+        logger.debug(path)
+        if re.search('SampleSheet', path):
+            ss_path = path
+        elif re.search('manifest', path, re.IGNORECASE):
+            manifest_path = path
+        elif re.search('expected', path, re.IGNORECASE):
+            exp_pairs_path = path
         else:
             pass
     
-    if ss_key is None or manifest_key is None or exp_pairs_key is None:
+    if ss_path is None or manifest_path is None or exp_pairs_path is None:
         # not all files are uploaded yet; a subsequent invoke should have them all
         return
 
-    ss_file = os.path.join('/tmp', os.path.basename(ss_key))
-    manifest_file = os.path.join('/tmp', os.path.basename(manifest_key))
-    exp_pairs_file = os.path.join('/tmp', os.path.basename(exp_pairs_key))
-    s3.download_file(bucket, ss_key, ss_file)
-    s3.download_file(bucket, manifest_key, manifest_file)
-    s3.download_file(bucket, exp_pairs_key, exp_pairs_file)
+    ss_file = os.path.join('/tmp', os.path.basename(ss_path))
+    wr.s3.download(ss_path, ss_file)
 
-    sample_sheet = pd.read_csv(ss_file, skiprows=10,
+    sample_sheet = wr.s3.read_csv(ss_path, skiprows=10,
                     names=['Sample_ID','Barcode','Position'],
                     usecols=['Sample_ID','Barcode','Position'],
                     dtype={'Barcode': str})
     convert_pairing = lambda x: "tumor-normal" if "2" in str(x) else "tumor-normal-nat" if "3" in str(x) else None
-    manifest = pd.read_excel(manifest_file,
+    manifest = wr.s3.read_excel(manifest_path,
                         usecols=['BSI_ID', 'Subject_ID', 'Anatomic_Site', 'Sample_Type','Within_batch_pairing'],
                         converters={'Within_batch_pairing':convert_pairing })
     manifest.rename(columns={'BSI_ID': 'Sample_ID'}, inplace=True)
-    exp_pairs = pd.read_excel(exp_pairs_file,
+    exp_pairs = wr.s3.read_excel(exp_pairs_path,
                         usecols=['BSI_ID_Current', 'BSI_ID_Previous'])
     exp_pairs.rename(columns={'BSI_ID_Current': 'Sample_ID'}, inplace=True)
     exp_pairs_list = exp_pairs.groupby('Sample_ID').agg(list)
     merged = manifest.merge(sample_sheet, how='left', on='Sample_ID').merge(exp_pairs_list, how='left', on='Sample_ID')
-    subset = merged[merged.Sample_ID != "EMTPY"]
+    df = merged[merged.Sample_ID != "EMTPY"]
 
-    batch_name = pd.read_csv(ss_file, skiprows=[0,1], header=None, nrows=1, usecols=[1])[1][0]
-    table = pa.Table.from_pandas(subset, preserve_index=False)
-    pq.write_table(table, f's3://{SAMPLE_INFO_BUCKET}/{batch_name}/sample_info.parquet')
+    batch_name = wr.s3.read_csv(ss_path, skiprows=[0,1], header=None, nrows=1, usecols=[1])[1][0]
+    wr.s3.to_parquet(df, f's3://{SAMPLE_INFO_BUCKET}/{batch_name}/{folder}.parquet')

@@ -20,6 +20,9 @@ Parameters:
     MinLength: 3
     MaxLength: 63
     AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+  ManifestFilename:
+    Type: String
+    Description: Name of the BeadChip manifest (.bpm) file
 
 Globals:
   Function:
@@ -33,14 +36,12 @@ Resources:
     Properties:
       ContentUri: ./iaap-cli
 
-  PandasPyarrow:
-    Type: AWS::Serverless::LayerVersion
+  wranglerLayer:
+    Type: AWS::Serverless::Application
     Properties:
-      ContentUri: ./pandas-pyarrow
-      CompatibleRuntimes:
-        - python3.9
-    Metadata:
-      BuildMethod: makefile
+      Location:
+        ApplicationId: 'arn:aws:serverlessrepo:us-east-1:336392948345:applications/aws-data-wrangler-layer-py3-9'
+        SemanticVersion: 2.15.1
 
   gencallFunction:
     Type: AWS::Serverless::Function
@@ -88,12 +89,39 @@ Resources:
         Variables:
           SAMPLE_INFO_BUCKET: !Ref SampleInfoBucket
       Layers:
-      - !Ref PandasPyarrow
+      - !GetAtt wranglerLayer.Outputs.WranglerLayer39Arn
       Policies:
       - S3ReadPolicy:
           BucketName: !Ref BatchFilesBucket
       - S3WritePolicy:
           BucketName: !Ref SampleInfoBucket
+      # Events:
+      #   S3Event:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref BatchFilesBucket
+      #       Events: s3:ObjectCreated:*
+
+  gtctableFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: gtc-table/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Timeout: 30
+      MemorySize: 1536
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          MANIFEST_FILENAME: !Ref ManifestFilename
+      Layers:
+      - !GetAtt wranglerLayer.Outputs.WranglerLayer39Arn
+      Policies:
+      - S3ReadPolicy:
+          BucketName: !Ref SampleDataBucket
+      - S3WritePolicy:
+          BucketName: !Ref SampleDataBucket
       # Events:
       #   S3Event:
       #     Type: S3

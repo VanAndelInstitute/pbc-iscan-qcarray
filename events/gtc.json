@@ -1,0 +1,14 @@
+{
+  "Records": [
+    {
+      "s3": {
+        "bucket": {
+          "name": "pbc-iscan-qcarrays"
+        },
+        "object": {
+          "key": "JEWSC_20211118_Qcarray/203986520019_R11C02.gtc"
+        }
+      }
+    }
+  ]
+}
