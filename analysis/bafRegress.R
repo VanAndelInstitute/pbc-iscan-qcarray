@@ -10,7 +10,7 @@ testsamplecontamination <- function(baf, abgeno, maf, subset=NULL, ...) {
     } else {
         fit <- lm(baf~amaf, subset=subs, ...)
     }
-    a <- c(coefficients(summary(fit))[2,], callrate, nrow(fit$model))
-    names(a) <- c("estimate","stderr","tval","pval","callrate", "Nhom")
-    return(a)
+    tibble(
+        names = c("estimate","stderr","tval","pval","callrate", "Nhom"),
+        fit = c(coefficients(summary(fit))[2,], callrate, nrow(fit$model)))
 }

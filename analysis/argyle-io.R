@@ -35,18 +35,10 @@ library(reticulate)
 #'  Inspiration from Dan Gatti's DOQTL package: <https://github.com/dmgatti/DOQTL/blob/master/R/extract.raw.data.R>
 #'
 #' @export
-read.beadarrayfiles <- function(sample.info, snps, manifest, ...) {
-
-    ## stop here if marker map is not well-formed
-    if (!.is.valid.map(snps)) {
-        if (!all(rownames(snps) == snps$marker))
-            stop(paste("Marker manifest is not well-formed.  It should follow the format of a PLINK",
-                       "*.bim file: a dataframe with columns <chr,marker,cM,pos> with rownames",
-                       "same as 'marker' column.  If genetic positions are unknown, set them to zero."))
-    }
+read.beadarrayfiles <- function(gtc_data, snps, ...) {
     
     ## read files from Illumina .gtc BeadArray files
-    data <- .read.illumina.raw(sample.info, nsnps = nrow(snps), manifest = manifest)
+    data <- .read.illumina.raw(gtc_data, nsnps = nrow(snps))
     rownames(data$samples) <- gsub(" ","", rownames(data$samples))
     
     ## convert to matrices using data.table's optimized code
@@ -84,18 +76,15 @@ read.beadarrayfiles <- function(sample.info, snps, manifest, ...) {
     
 }
 
-s3 <- paws::s3()
 ## process .gtc files into a dataframe (of samples) and data.table (of calls/intensities)
-.read.illumina.raw <- function(sample.info, nsnps, manifest, ...) {
+.read.illumina.raw <- function(gtc_data, nsnps, ...) {
     
-    #data <- data.table::fread(piper, skip = 9, showProgress = interactive(), stringsAsFactors = FALSE, sep = "\t")
-    bead.array.files <- import('IlluminaBeadArrayFiles')    
-    intensity.data <- map(sample.info, ~ get.intensity.data(.,manifest))
-    data <- rbindlist(intensity.data)
-    gender <- unlist(map(intensity.data, ~ attr(.,"gender")))
-    print(gender)
-    gender[gender==3] <- 0
-    samples.df <- data.frame(Name = names(sample.info), Gender = gender)
+    data <- gtc_data %>%
+        select(iid = Sample_ID, marker, x, y, call1, call2) %>%
+        data.table::as.data.table()
+    samples.df <- gtc_data  %>%
+        distinct(Name = Sample_ID, Gender) %>%
+        as.data.frame()
 
     ## rename samples by index
 	renamer <- make.unique(as.character(samples.df$Name))
@@ -116,32 +105,6 @@ s3 <- paws::s3()
     
     return( list(samples = samples.df, intens = data) )
     
-}
-
-get.intensity.data <- function(sample, manifest) {
-    U <- 0
-    M <- 1
-    F <- 2
-    
-    # Download the genotype data
-    key <- glue::glue('{sample$Barcode}_{sample$Position}.gtc')
-    filename <- paste0("/tmp/", key)
-    if(!file.exists(filename)) {
-        s3$download_file(bucket, key, filename)
-    }
-    # Read in the genotype data from binary file
-    gtc <- bead.array.files$GenotypeCalls(filename)
-    gender <- get(as.character(gtc$get_gender()))
-    print(gender)
-    calls <- gtc$get_base_calls_forward_strand(manifest$snps, manifest$source_strands)
-    intensities <- unlist(gtc$get_normalized_intensities(manifest$normalization_lookups))
-    sample.data <- data.table::data.table(
-        marker = manifest$names,
-        iid = sample$Sample_ID,
-        x = intensities[1], y = intensities[2], 
-        call1 = calls[1], call2 = calls[2])
-    setattr(sample.data, "gender", gender)
-    return(sample.data)
 }
 
 ## convert data.table of calls/intensities to a (sites x samples) matrix
@@ -203,20 +166,5 @@ get.intensity.data <- function(sample, manifest) {
     colnames(rez) <- colnames(x)
     rownames(rez) <- rownames(x)
     return(rez)
-    
-}
-
-## internal helpers for validating the 'genotypes' data structure and its parts
-
-.is.valid.map <- function(mm, ...) {
-    
-    pass <- is.data.frame(mm)
-    pass <- pass && all(colnames(mm)[1:4] == c("chr","marker","cM","pos"))
-    if ("marker" %in% colnames(mm))
-        pass <- all(rownames(mm) == as.character(mm$marker))
-    else
-        pass <- FALSE
-    
-    return(pass)
     
 }

@@ -1,4 +1,4 @@
-library(plyr)
+#library(plyr)
 library(dplyr, warn.conflicts = FALSE)
 
 
@@ -54,35 +54,24 @@ merge.sheets <- function(manifest, sample_sheets){
   return(merged)
 }
 
-s3 <- paws::s3()
-bucket <- "pbc-iscan-qcarrays"
-filename <- "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
-s3$download_file(bucket, filename, paste0("/tmp/", filename))
-filename <- "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
-s3$download_file(bucket, filename, paste0("/tmp/", filename))
-
 source("argyle-io.R")
 
-import.gencalls <- function(sample.info, manifest) {
+import.gencalls <- function(gtc_data, coordinates_file_path, strand_report_file_path) {
 
   # Construct marker map
-  phys_loc = read.delim("/tmp/InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt", header = TRUE, sep= '\t')
-  allele_map = as.data.frame(read.delim("/tmp/InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt", header = FALSE,sep="\t", stringsAsFactors = F))
+  phys_loc = read_tsv_arrow(coordinates_file_path) %>%
+    dplyr::select(marker=Name,chr=Chr,pos=MapInfo,cM="deCODE(cM)")
+  allele_map = read_tsv_arrow(strand_report_file_path, skip=5) %>%
+    dplyr::select(marker=SNP_Name, A1=Forward_Allele1, A2=Forward_Allele2)
 
-    #remove header
-    allele_map = allele_map[-c(1:5), ]
-    colnames(allele_map) = allele_map[1,]
-    allele_map = allele_map[-c(1), ] %>% dplyr::select(SNP_Name, Forward_Allele1, Forward_Allele2)
-  
-  #Re-name cols for argyle input
-  colnames(phys_loc) <- c("marker", "chr", "pos", "cM")
-  colnames(allele_map) <- c("marker", "A1", "A2")
-  
   #Merge them by marker (SNP_Name)
-  marker_map <- merge(phys_loc, allele_map, by = "marker") %>% dplyr::select(chr,marker,cM,pos,A1,A2) %>% mutate_all(as.character)
+  marker_map <- merge(phys_loc, allele_map, by = "marker") %>%
+    dplyr::select(chr,marker,cM,pos,A1,A2) %>%
+    mutate_all(as.character)
   row.names(marker_map) <- marker_map$marker
+    
   # Downloads and import .gtc data
-  return(read.beadarrayfiles(sample.info, snps = marker_map, manifest = manifest))
+  return(read.beadarrayfiles(gtc_data, marker_map))
 }
 
 
