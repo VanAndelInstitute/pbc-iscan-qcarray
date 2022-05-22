@@ -1,12 +1,9 @@
 import logging
 import os
 import json
-import re
 from urllib.parse import unquote_plus
 import awswrangler as wr
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from IlluminaBeadArrayFiles import GenotypeCalls, BeadPoolManifest, code2genotype
 
 logging.basicConfig(level=logging.INFO)
@@ -53,8 +50,9 @@ def lambda_handler(event, _context):
     normalized_intensities = gtc.get_normalized_intensities(manifest.normalization_lookups)
     x,y = map(list, zip(*normalized_intensities))
     df = pd.DataFrame({
-        'marker': manifest.names,
         'Sample_ID': sample_id,
+        'Gender': gtc.get_gender(),
+        'marker': manifest.names,
         'x': x,
         'y': y,
         'call1': call1,
@@ -64,9 +62,6 @@ def lambda_handler(event, _context):
     })
 
     # Store parquet dataset with same folder structure as .gtc files
-    # Put gender in this file's metadata, b/c inserting it into the sample info metadata would be too complicated
-    schema = pa.Schema.from_pandas(df).with_metadata({'gender': gtc.get_gender()})
-    gtc_table = pa.Table.from_pandas(df, schema)
     pq_filename = gtc_filename.replace('.gtc', '.parquet')
-    pq.write_table(gtc_table, '/tmp/' + pq_filename)
-    wr.s3.upload(path=f's3://{bucket}/parquet/{gtc_prefix}/{pq_filename}', local_file='/tmp/' + pq_filename)
+    wr.s3.to_parquet(df, path=f's3://{bucket}/parquet/{gtc_prefix}/{pq_filename}',
+        s3_additional_kwargs={'StorageClass': 'INTELLIGENT_TIERING'})

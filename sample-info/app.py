@@ -1,4 +1,3 @@
-from cmath import exp
 import logging
 import os
 import json
@@ -61,4 +60,5 @@ def lambda_handler(event, _context):
     df = merged[merged.Sample_ID != "EMTPY"]
 
     batch_name = wr.s3.read_csv(ss_path, skiprows=[0,1], header=None, nrows=1, usecols=[1])[1][0]
-    wr.s3.to_parquet(df, f's3://{SAMPLE_INFO_BUCKET}/{batch_name}/{folder}.parquet')
+    wr.s3.to_parquet(df, f's3://{SAMPLE_INFO_BUCKET}/{batch_name}/sample_info.parquet',
+        s3_additional_kwargs={'StorageClass': 'INTELLIGENT_TIERING'})

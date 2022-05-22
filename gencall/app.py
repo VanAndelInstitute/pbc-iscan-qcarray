@@ -53,8 +53,8 @@ def lambda_handler(event, _context):
     cmd = f'/opt/iaap-cli/iaap-cli gencall /tmp/{BPM} /tmp/{EGT} /tmp -f /tmp -g'
     subprocess.run(cmd)
     
-    s3.upload_file(f'/tmp/{sample}.gtc', bucket, f'{sample}.gtc')
-    s3.upload_file(f'/tmp/{sample}.ped', bucket, f'{sample}.ped')
+    s3.upload_file(f'/tmp/{sample}.gtc', bucket, f'{sample}.gtc',
+        ExtraArgs={'StorageClass': 'INTELLIGENT_TIERING'})
 
     # delete the files for this sample so that we don't run gencall against them in subsequent runs and don't fill up /tmp
     for filename in glob(f'/tmp/{sample}*'):
