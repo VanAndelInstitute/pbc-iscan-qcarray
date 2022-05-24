@@ -1,7 +1,6 @@
 ## io.R
 ## functions for import and export of data from 'genotypes' objects
 library(argyle, warn.conflicts = FALSE)
-library(reticulate)
 
 #' Read genotype calls and hybridization from Illumina BeadStudio output.
 #'
