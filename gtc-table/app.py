@@ -63,5 +63,40 @@ def lambda_handler(event, _context):
 
     # Store parquet dataset with same folder structure as .gtc files
     pq_filename = gtc_filename.replace('.gtc', '.parquet')
-    wr.s3.to_parquet(df, path=f's3://{bucket}/parquet/{gtc_prefix}/{pq_filename}',
+    wr.s3.to_parquet(df, path=f's3://{bucket}/{gtc_prefix.replace("gtc","parquet")}/{pq_filename}',
         s3_additional_kwargs={'StorageClass': 'INTELLIGENT_TIERING'})
+
+if __name__ == "__main__":
+    """
+    Convenience code for generating .parquet files from all .gtc files in a batch.
+    Export env var MANIFEST_FILENAME="InfiniumQCArray-24v1-0_A4.bpm" first.
+    """
+    import argparse
+    import boto3
+
+    parser = argparse.ArgumentParser(description='Create Parquet files for all .gtc files in a folder.')
+    parser.add_argument('bucket', metavar='bucket',
+                help='the bucket containing the .gtc files')
+    parser.add_argument('batch_name', metavar='batch_name',
+                help='the folder containing the .gtc files')
+    args = parser.parse_args()
+
+    s3 = boto3.client('s3')
+    resp = s3.list_objects_v2(Bucket=args.bucket, Prefix=f'gtc/{args.batch_name}')
+    keys = [obj['Key'] for obj in resp['Contents'] if obj['Key'].endswith('.gtc')]
+    for key in keys:
+        event = {
+                    "Records": [
+                        {
+                            "s3": {
+                                "bucket": {
+                                    "name": args.bucket
+                                },
+                                "object": {
+                                    "key": key
+                                }
+                            }
+                        }
+                    ]
+                }
+        lambda_handler(event, None)
