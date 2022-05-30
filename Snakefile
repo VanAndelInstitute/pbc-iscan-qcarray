@@ -3,9 +3,6 @@ S3 = S3RemoteProvider()
 
 configfile: "analysis/config.yaml"
 
-coordinates_filename = "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
-strand_report_filename = "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
-
 
 rule all:
     input: "test_output.txt"
@@ -53,9 +50,6 @@ rule bafRegress:
 rule run_analysis:
     input:
         "bafRegress.txt"
-    params:
-        coordinates_filename = coordinates_filename,
-        strand_report_filename = strand_report_filename
     output:
         "test_output.txt"
     script:

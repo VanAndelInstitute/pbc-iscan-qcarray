@@ -4,10 +4,12 @@ library(glue)
 
 gtc_bucket <- snakemake@config[["gtc_bucket"]]
 batch_name <- snakemake@config[["JIRA"]]
+coordinates_filename <- "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
+strand_report_filename <- "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
 
 gtc_data <- open_dataset(glue("s3://{gtc_bucket}/parquet/{batch_name}/"))
-coordinates_file_path <- glue("s3://{gtc_bucket}/{snakemake@params[[\"coordinates_filename\"]]}")
-strand_report_file_path <- glue("s3://{gtc_bucket}/{snakemake@params[[\"strand_report_filename\"]]}")
+coordinates_file_path <- glue("s3://{gtc_bucket}/{coordinates_filename}")
+strand_report_file_path <- glue("s3://{gtc_bucket}/{strand_report_filename}")
 
 # Construct marker map
 phys_loc = read_tsv_arrow(coordinates_file_path) %>%
