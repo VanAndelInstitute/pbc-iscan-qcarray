@@ -27,7 +27,7 @@ mamba create -c conda-forge -c bioconda -n snakemake snakemake
 mamba activate snakemake
 # https://aws-data-wrangler.readthedocs.io/en/stable/install.html#conda
 # https://arrow.apache.org/docs/r/articles/install.html#method-1a---binary-r-package-containing-libarrow-binary-via-rspmconda
-mamba install -y -c conda-forge -c bioconda --strict-channel-priority awswrangler r-arrow r-dplyr r-tidyr r-readr r-glue r-remotes bioconductor-preprocesscore
+mamba install -y -c conda-forge -c bioconda --strict-channel-priority awswrangler r-arrow r-dplyr r-tidyr r-readr r-glue r-data.table r-remotes bioconductor-preprocesscore
 
 # Install argyle
 # https://rdrr.io/github/andrewparkermorgan/argyle/
