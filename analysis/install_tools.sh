@@ -1,16 +1,13 @@
 #! /bin/bash
+./resize.sh 20
 
 # Uninstall AWS CLI version 1
 sudo pip uninstall -y awscli
 # Install AWS CLI version 2
 wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-unzip awscli-exe-linux-x86_64.zip -d aws-installation
-sudo ./aws-installation/install
-
-# Install latest AWS SAM CLI
-wget "https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip"
-unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
-sudo ./sam-installation/install
+unzip awscli-exe-linux-x86_64.zip
+sudo ./aws/install
+rm -rf aws awscli-exe-linux-x86_64.zip
 
 # Install R v4
 sudo amazon-linux-extras install R4
@@ -19,6 +16,7 @@ sudo amazon-linux-extras install R4
 # https://github.com/conda-forge/miniforge#unix-like-platforms
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
 bash Mambaforge-$(uname)-$(uname -m).sh
+rm Mambaforge-$(uname)-$(uname -m).sh
 
 ### restart shell ###
 
