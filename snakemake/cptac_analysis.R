@@ -24,7 +24,7 @@ marker_map <- merge(phys_loc, allele_map, by = "marker") %>%
 row.names(marker_map) <- marker_map$marker
 
 
-source("analysis/argyle-io.R")
+source("argyle-io.R")
 
 # Downloads and import .gtc data
 raw_data <- read.beadarrayfiles(gtc_data, marker_map)

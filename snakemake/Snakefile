@@ -1,7 +1,7 @@
 from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 S3 = S3RemoteProvider()
 
-configfile: "analysis/config.yaml"
+configfile: "config.yaml"
 
 
 rule all:
@@ -16,7 +16,7 @@ rule sample_info:
     output:
         S3.remote(expand("{bucket}/{JIRA}/sample_info.parquet", bucket=config["sample_info_bucket"], JIRA=config["JIRA"]))
     script:
-        "analysis/sample_info.py"
+        "sample_info.py"
 
 rule batch_mafs:
     params:
@@ -24,7 +24,7 @@ rule batch_mafs:
     output:
         S3.remote("{bucket}/maf/{batch}.parquet")
     script:
-        "analysis/batch_mafs.R"
+        "batch_mafs.R"
 
 batches = set(S3.glob_wildcards(config["gtc_bucket"] + "/parquet/{JIRA}/{part}.parquet")[0])
 rule popmaf:
@@ -35,7 +35,7 @@ rule popmaf:
     output:
         "popmaf.txt"
     script:
-        "analysis/popmaf.R"
+        "popmaf.R"
 
 rule bafRegress:
     params:
@@ -45,7 +45,7 @@ rule bafRegress:
     output:
         "bafRegress.txt"
     script:
-        "analysis/bafRegress.R"
+        "bafRegress.R"
 
 rule run_analysis:
     input:
@@ -53,4 +53,4 @@ rule run_analysis:
     output:
         "test_output.txt"
     script:
-        "analysis/cptac_analysis.R"
+        "cptac_analysis.R"
