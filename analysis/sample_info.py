@@ -7,7 +7,7 @@ gtc_bucket = snakemake.config["gtc_bucket"]
 batch_name = snakemake.config["JIRA"]
 manifest = snakemake.config["manifest"]
 expected_pairings = snakemake.config["expected_pairings"]
-output_file = snakemake.output
+output_file = snakemake.output[0]
 
 # SampleSheet*.csv
 sample_sheet = wr.s3.read_csv(f's3://{gtc_bucket}/gtc/{batch_name}/SampleSheet*.csv', skiprows=10,
