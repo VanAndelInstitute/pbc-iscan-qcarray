@@ -7,14 +7,9 @@ configfile: "config.yaml"
 rule all:
     input: "test_output.txt"
 
-sample_sheet, = S3.glob_wildcards(config["gtc_bucket"] + "/gtc/" + config["JIRA"] + "/{sample_sheet,SampleSheet\w*.csv}")
 rule sample_info:
-    input:
-        S3.remote(config["manifest"], stay_on_remote=True),
-        S3.remote(config["expected_pairings"], stay_on_remote=True),
-        S3.remote(expand("{bucket}/gtc/{JIRA}/{sample_sheet}", bucket=config["gtc_bucket"], JIRA=config["JIRA"], sample_sheet=sample_sheet))
     output:
-        S3.remote(expand("{bucket}/{JIRA}/sample_info.parquet", bucket=config["sample_info_bucket"], JIRA=config["JIRA"]))
+        S3.remote("{bucket}/{batch}/sample_info.parquet".format(bucket=config["sample_info_bucket"], batch=config["JIRA"]))
     script:
         "sample_info.py"
 
