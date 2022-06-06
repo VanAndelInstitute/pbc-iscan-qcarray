@@ -1,5 +1,5 @@
 sample_info_bucket: "pbc-qcarray-sample-info"
 gtc_bucket: "pbc-iscan-qcarrays"
-JIRA: "JEWSC_20211118_Qcarray"
-manifest: "pbc-qcarray-batch-files/211118/iScan manifest_with subject IDs_211118.xlsx"
-expected_pairings: "pbc-qcarray-batch-files/211118/CPTAC iScan Expected Parings 11.22.2021.xlsx"
+JIRA: "JEWSC_20211118_QCarray"
+manifest: "pbc-qcarray-batch-files/JEWSC_20211118_QCarray/iScan manifest_with subject IDs_211118.xlsx"
+expected_pairings: "pbc-qcarray-batch-files/JEWSC_20211118_QCarray/iScan Expected Parings 11.22.2021.xlsx"

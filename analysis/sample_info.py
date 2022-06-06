@@ -1,14 +1,16 @@
+import sys
 import awswrangler as wr
+import pyarrow as pa
+import pyarrow.parquet as pq
 
-sample_info_bucket = snakemake.config["sample_info_bucket"]
 gtc_bucket = snakemake.config["gtc_bucket"]
 batch_name = snakemake.config["JIRA"]
 manifest = snakemake.config["manifest"]
 expected_pairings = snakemake.config["expected_pairings"]
+output_file = snakemake.output
 
-# SampleSheet.csv
-sample_sheet_path = wr.s3.list_objects(f's3://{gtc_bucket}/gtc/{batch_name}/SampleSheet', suffix='.csv')[0]
-sample_sheet = wr.s3.read_csv(sample_sheet_path, skiprows=10,
+# SampleSheet*.csv
+sample_sheet = wr.s3.read_csv(f's3://{gtc_bucket}/gtc/{batch_name}/SampleSheet*.csv', skiprows=10,
                 names=['Sample_ID','Barcode','Position'],
                 usecols=['Sample_ID','Barcode','Position'],
                 dtype={'Barcode': str})
@@ -31,5 +33,5 @@ merged = manifest.merge(sample_sheet, how='left', on='Sample_ID').merge(exp_pair
 df = merged[merged.Sample_ID != "EMTPY"]
 
 # Write to Parquet column store
-wr.s3.to_parquet(df, f's3://{sample_info_bucket}/{batch_name}/sample_info.parquet',
-    s3_additional_kwargs={'StorageClass': 'INTELLIGENT_TIERING'})
+table = pa.Table.from_pandas(df)
+pq.write_table(table, output_file)
