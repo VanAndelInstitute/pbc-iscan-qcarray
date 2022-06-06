@@ -2,7 +2,8 @@ from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 S3 = S3RemoteProvider()
 
 configfile: "config.yaml"
-
+#container: "docker://public.ecr.aws/j9n7w7o0/snakemake:latest"
+container: "file://../../apptainer_sandbox/"
 
 rule all:
     input: "test_output.txt"
