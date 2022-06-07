@@ -1,7 +1,7 @@
-import sys
 import awswrangler as wr
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pandas as pd
 
 gtc_bucket = snakemake.config["gtc_bucket"]
 batch_name = snakemake.config["JIRA"]
@@ -25,8 +25,11 @@ colname_map = {'BSI_ID': 'Sample_ID', 'Subject ID': 'Subject_ID', 'Anatomic Site
 manifest.rename(columns=colname_map, inplace=True)
 
 # Excel expected pairs file
-exp_pairs = wr.s3.read_excel(f's3://{expected_pairings}',
-                    usecols=['BSI_ID_Current', 'BSI_ID_Previous'])
+exp_pairs = [
+    wr.s3.read_excel(f's3://{xlsx}', usecols=['BSI_ID_Current', 'BSI_ID_Previous'])
+    for xlsx in ([expected_pairings] if isinstance(expected_pairings, str) else expected_pairings)
+            ]
+exp_pairs = pd.concat(exp_pairs)
 exp_pairs.rename(columns={'BSI_ID_Current': 'Sample_ID'}, inplace=True)
 exp_pairs_list = exp_pairs.groupby('Sample_ID').agg(list)
 
