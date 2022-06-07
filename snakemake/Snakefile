@@ -8,6 +8,8 @@ rule all:
     input: "test_output.txt"
 
 rule sample_info:
+    input:
+        "config.yaml"
     output:
         S3.remote("{bucket}/{batch}/sample_info.parquet".format(bucket=config["sample_info_bucket"], batch=config["JIRA"]))
     script:
