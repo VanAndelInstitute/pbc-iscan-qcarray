@@ -17,10 +17,12 @@ sample_sheet = wr.s3.read_csv(f's3://{gtc_bucket}/gtc/{batch_name}/SampleSheet*.
 
 # Excel manifest file
 convert_pairing = lambda x: "tumor-normal" if "2" in str(x) else "tumor-normal-nat" if "3" in str(x) else None
+colnames = ['BSI_ID', 'Subject_ID', 'Subject ID', 'Anatomic_Site', 'Anatomic Site', 'Sample_Type', 'Sample Type', 'Within_batch_pairing', 'Within batch pairing']
 manifest = wr.s3.read_excel(f's3://{manifest}',
-                    usecols=['BSI_ID', 'Subject_ID', 'Anatomic_Site', 'Sample_Type','Within_batch_pairing'],
+                    usecols=lambda x: x in colnames,
                     converters={'Within_batch_pairing':convert_pairing })
-manifest.rename(columns={'BSI_ID': 'Sample_ID'}, inplace=True)
+colname_map = {'BSI_ID': 'Sample_ID', 'Subject ID': 'Subject_ID', 'Anatomic Site': 'Anatomic_Site', 'Sample Type': 'Sample_Type', 'Within batch pairing': 'Within_batch_pairing'}
+manifest.rename(columns=colname_map, inplace=True)
 
 # Excel expected pairs file
 exp_pairs = wr.s3.read_excel(f's3://{expected_pairings}',
