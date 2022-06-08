@@ -20,6 +20,12 @@ Parameters:
     MinLength: 3
     MaxLength: 63
     AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
+  IdatBucket:
+    Type: String
+    Description: Name of the bucket containing the .idat files
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: "(?!^(\\d{1,3}\\.){3}\\d{1,3}$)(^[a-z0-9]([a-z0-9-]*(\\.[a-z0-9])?)*$(?<!\\-))"
   ManifestFilename:
     Type: String
     Description: Name of the BeadChip manifest (.bpm) file
@@ -56,11 +62,14 @@ Resources:
       Environment:
         Variables:
           MANIFEST_CLUSTER_BUCKET: !Ref SampleDataBucket
+          SAMPLE_DATA_BUCKET: !Ref SampleDataBucket
       Layers:
       - !Ref IaapCli
       Policies:
       - S3ReadPolicy:
           BucketName: !Ref SampleDataBucket
+      - S3ReadPolicy:
+          BucketName: !Ref IdatBucket
       - S3WritePolicy:
           BucketName: !Ref SampleDataBucket
       # Events:

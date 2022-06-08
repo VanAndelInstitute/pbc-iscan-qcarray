@@ -37,8 +37,12 @@ def lambda_handler(event, _context):
                     names=['Sample_ID','Barcode','Position'],
                     usecols=['Sample_ID','Barcode','Position'],
                     dtype={'Barcode': str})
-    sample_id = sample_sheet.loc[(sample_sheet['Barcode'] == barcode) & (sample_sheet['Position'] == position),
-        "Sample_ID"].values[0]
+    sample_ids = sample_sheet.loc[(sample_sheet['Barcode'] == barcode) & (sample_sheet['Position'] == position),
+        "Sample_ID"].values
+    if len(sample_ids) == 0:
+        # This .idat doesn't belong to this batch, so skip it
+        return
+    sample_id = sample_ids[0]
 
     # Extract the gencall data from the .gtc and create a pyarrow table
     wr.s3.download(path=f's3://{bucket}/{MANIFEST_FILENAME}', local_file='/tmp/' + MANIFEST_FILENAME)
