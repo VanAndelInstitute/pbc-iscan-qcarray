@@ -32,8 +32,7 @@ def lambda_handler(event, _context):
     logger.debug(barcode + '_' + position)
 
     # Fetch the sample ID from the metadata
-    sample_sheet_path = wr.s3.list_objects(f's3://{bucket}/{gtc_prefix}/SampleSheet', suffix='.csv')[0]
-    sample_sheet = wr.s3.read_csv(sample_sheet_path, skiprows=10,
+    sample_sheet = wr.s3.read_csv(f's3://{bucket}/{gtc_prefix}/SampleSheet*.csv', skiprows=10,
                     names=['Sample_ID','Barcode','Position'],
                     usecols=['Sample_ID','Barcode','Position'],
                     dtype={'Barcode': str})
