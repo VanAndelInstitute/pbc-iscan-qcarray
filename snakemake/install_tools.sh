@@ -9,8 +9,8 @@ unzip awscli-exe-linux-x86_64.zip
 sudo ./aws/install
 rm -rf aws awscli-exe-linux-x86_64.zip
 
-# Install R v4
-sudo amazon-linux-extras install R4
+# Install Cloud9 CLI
+npm install -g c9
 
 # Use Mamba to install Snakemake, AWS Wrangler, and R deps via conda-forge
 # https://github.com/conda-forge/miniforge#unix-like-platforms
