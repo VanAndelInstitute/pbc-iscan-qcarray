@@ -246,3 +246,4 @@ $RECYCLE.BIN/
 *.toml
 .snakemake/
 .Rhistory
+.RData
