@@ -1,0 +1,54 @@
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider()
+
+configfile: "config.yaml"
+
+
+rule all:
+    input: "{batch}_output.txt".format(batch=config["JIRA"])
+
+rule run_analysis:
+    output:
+        "{batch}_output.txt"
+    input:
+        "{batch}_bafRegress.txt",
+        S3.remote("{bucket}/{{batch}}/sample_info.parquet".format(bucket=config["sample_info_bucket"]))
+    script:
+        "cptac_analysis.R"
+
+rule bafRegress:
+    output:
+        "{batch}_bafRegress.txt"
+    input:
+        "popmaf.txt",
+        #"parquet/{batch}/{part}.parquet"
+    script:
+        "bafRegress.R"
+
+# https://snakemake.readthedocs.io/en/stable/project_info/faq.html#glob-wildcards
+batches, = S3.glob_wildcards(config["gtc_bucket"]+"/maf/{batch}.parquet")
+rule popmaf:
+    output:
+        "popmaf.txt"
+    input:
+        expand("maf/{batch}.parquet", batch=batches)
+    script:
+        "popmaf.R"
+
+rule batch_mafs:
+    output:
+        "maf/{batch}.parquet"
+    input:
+        #"parquet/{batch}/{part}.parquet"
+    script:
+        "batch_mafs.R"
+
+rule sample_info:
+    output:
+        S3.remote("{bucket}/{{batch}}/sample_info.parquet".format(bucket=config["sample_info_bucket"]))
+    input:
+        S3.remote(config["manifest"], stay_on_remote=True),
+        S3.remote(config["expected_pairings"], stay_on_remote=True),
+        "config.yaml"
+    script:
+        "sample_info.py"

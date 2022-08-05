@@ -1,7 +1,11 @@
 library(dplyr, warn.conflicts = FALSE)
+library(glue)
+
+bucket <- snakemake@config[['gtc_bucket']]
+batch <- snakemake@config[['JIRA']]
 
 # Get the batch frequencies for a given project/batch
-gtc_data <- arrow::open_dataset(snakemake@params[[1]])
+gtc_data <- arrow::open_dataset(glue("s3://{bucket}/parquet/{batch}/"))
 batch_maf <- gtc_data %>%
     group_by(marker, abgeno) %>%
     filter(abgeno != "NC") %>%

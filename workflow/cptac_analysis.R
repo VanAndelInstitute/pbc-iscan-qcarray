@@ -4,6 +4,7 @@ library(glue)
 
 gtc_bucket <- snakemake@config[["gtc_bucket"]]
 batch_name <- snakemake@config[["JIRA"]]
+output <- snakemake@output[[1]]
 coordinates_filename <- "InfiniumQCArray-24v1-0_A3_Physical-and-Genetic-Coordinates.txt"
 strand_report_filename <- "InfiniumQCArray-24v1-0_A3_StrandReport_FDT.txt"
 
@@ -28,7 +29,7 @@ source("argyle-io.R")
 
 # Downloads and import .gtc data
 raw_data <- read.beadarrayfiles(gtc_data, marker_map)
-sink("test_output.txt")
+sink(output)
 summary(raw_data)
 head(raw_data)
 sink()

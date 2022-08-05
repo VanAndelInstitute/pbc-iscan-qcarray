@@ -1,5 +1,10 @@
 library(dplyr, warn.conflicts = FALSE)
 library(readr)
+library(glue)
+
+bucket <- snakemake@config[['gtc_bucket']]
+batch <- snakemake@config[['JIRA']]
+output <- snakemake@output[[1]]
 
 testsamplecontamination <- function(baf, abgeno, maf, subset=NULL, ...) {
     stopifnot(all(length(baf)==length(maf), length(baf)==length(abgeno)))
@@ -19,7 +24,7 @@ testsamplecontamination <- function(baf, abgeno, maf, subset=NULL, ...) {
 }
 
 # Test each sample for contamination
-gtc_data <- arrow::open_dataset(snakemake@params[[1]])
+gtc_data <- arrow::open_dataset(glue("s3://{bucket}/parquet/{batch}/"))
 popmaf <- read_tsv("popmaf.txt")
 baf_results <- gtc_data %>%
     select(Sample_ID, baf, abgeno) %>%
@@ -27,4 +32,4 @@ baf_results <- gtc_data %>%
     collect() %>%
     group_modify(~ testsamplecontamination(.$baf, .$abgeno, popmaf$maf)) %>%
     tidyr::spread(names, fit)
-write_tsv(baf_results, "bafRegress.txt")
+write_tsv(baf_results, output)
