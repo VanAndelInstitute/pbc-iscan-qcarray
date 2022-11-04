@@ -1,5 +1,5 @@
 # pbc-iscan-qcarray
-The Pathology and Biorepository Core at the Van Andel Research Institute uses the Illumina Infinium QC Array BeadChip on the Illumina iScan to check biospecimens for contamination and mislabling. 
+The Pathology and Biorepository Core at the Van Andel Research Institute uses the Illumina Infinium QC Array BeadChip on the Illumina iScan to check biospecimens for contamination and mislabeling. 
 
 This workflow is implemented in two parts, (1) automated, event-driven data wrangling, and (2) manually run QC analysis.
 
